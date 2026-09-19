@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Plus, Trash2, Image as ImageIcon, Link as LinkIcon, AlertTriangle, Layers, Tag, DollarSign, Sparkles, Upload, Loader2 } from 'lucide-react';
 import { CATEGORIES, CONDITIONS } from '../data/mockData';
 import InfoTooltip from './InfoTooltip';
-import { uploadProductImage } from '../firebase';
+import { uploadProductImage } from '../supabase';
 
 const SAMPLE_STOCK_IMAGES = [
   'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
@@ -41,7 +41,7 @@ export default function UploadModal({ onClose, onSubmit, currentUser, bannedKeyw
 
   const [bannedKeywordError, setBannedKeywordError] = useState(null);
 
-  // File Upload Handler (Firebase Storage)
+  // File Upload Handler
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
@@ -52,24 +52,22 @@ export default function UploadModal({ onClose, onSubmit, currentUser, bannedKeyw
     }
 
     setIsUploading(true);
-    setUploadStatusMsg('Uploading image to Firebase Storage...');
+    setUploadStatusMsg('Uploading image to Supabase Storage...');
 
     try {
       const uploadedUrls = [];
       for (const file of files) {
-        // Upload to Firebase Storage
         const url = await uploadProductImage(file);
-        uploadedUrls.push(url);
+        if (url) uploadedUrls.push(url);
       }
       setImages([...images, ...uploadedUrls]);
-      setUploadStatusMsg('Uploaded successfully!');
+      setUploadStatusMsg('Uploaded to Supabase successfully!');
       setTimeout(() => setUploadStatusMsg(null), 3000);
     } catch (err) {
-      console.warn("Firebase Storage upload fallback (credentials needed):", err);
-      // Fallback: load file locally as base64/object URL for instant preview
+      console.warn("Upload error:", err);
       const localUrls = files.map(file => URL.createObjectURL(file));
       setImages([...images, ...localUrls]);
-      setUploadStatusMsg('Previewing local image (configure Firebase config to persist on cloud).');
+      setUploadStatusMsg('Previewing local image.');
       setTimeout(() => setUploadStatusMsg(null), 4000);
     } finally {
       setIsUploading(false);
@@ -174,15 +172,15 @@ export default function UploadModal({ onClose, onSubmit, currentUser, bannedKeyw
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl relative flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 dark:bg-slate-950/70 backdrop-blur-xl flex items-center justify-center p-3 sm:p-6 animate-in fade-in">
+      <div className="glass-modal rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl relative flex flex-col max-h-[92vh]">
         
         {/* Header Bar */}
-        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/90 dark:bg-slate-900/90 sticky top-0 z-10">
+        <div className="p-4 sm:p-5 border-b border-slate-200/50 dark:border-white/10 flex items-center justify-between backdrop-blur-md sticky top-0 z-10">
           <div>
             <h3 className="font-extrabold text-lg text-slate-900 dark:text-white flex items-center gap-1.5">
               <span>Post KollectoP2P Listing</span>
-              <InfoTooltip text="Single-page upload flow with Firebase Storage image hosting." position="bottom" />
+              <InfoTooltip text="Single-page upload flow with image hosting." position="bottom" />
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">Locked to @iisermohali.ac.in verified student network</p>
           </div>
@@ -207,8 +205,8 @@ export default function UploadModal({ onClose, onSubmit, currentUser, bannedKeyw
             <div className="flex items-center justify-between">
               <label className="font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider text-xs flex items-center gap-1">
                 <ImageIcon className="w-4 h-4 text-emerald-500" />
-                <span>Upload Media (Firebase Storage)</span>
-                <InfoTooltip text="Upload product photos from your device to Firebase Storage. Radio button overlay sets the cover thumbnail." position="right" />
+                <span>Upload Media</span>
+                <InfoTooltip text="Upload product photos from your device. Radio button overlay sets the cover thumbnail." position="right" />
               </label>
               <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">{images.length}/5 uploaded</span>
             </div>
@@ -241,17 +239,17 @@ export default function UploadModal({ onClose, onSubmit, currentUser, bannedKeyw
               ))}
             </div>
 
-            {/* Firebase File Upload Dropzone */}
+            {/* File Upload Dropzone */}
             {images.length < 5 && (
               <div className="space-y-3 pt-2">
-                <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-emerald-500/40 hover:border-emerald-500 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 cursor-pointer transition-colors text-center">
-                  <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-extrabold text-xs">
+                <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-2xl glass-card cursor-pointer transition-colors text-center" style={{borderColor:'var(--apple-blue)', opacity: 0.85}}>
+                  <div className="flex items-center gap-2 font-extrabold text-xs" style={{color:'var(--apple-blue)'}}>
                     {isUploading ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
                     ) : (
                       <Upload className="w-5 h-5" />
                     )}
-                    <span>{isUploading ? 'Uploading to Firebase...' : 'Choose File to Upload to Firebase Storage'}</span>
+                    <span>{isUploading ? 'Uploading...' : 'Choose File to Upload'}</span>
                   </div>
                   <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">PNG, JPG, WEBP up to 10MB</span>
                   <input
@@ -265,7 +263,7 @@ export default function UploadModal({ onClose, onSubmit, currentUser, bannedKeyw
                 </label>
 
                 {uploadStatusMsg && (
-                  <div className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 p-2 rounded-xl text-center">
+                  <div className="text-[11px] font-bold glass-badge p-2 rounded-xl text-center" style={{color:'var(--apple-blue)'}}>
                     {uploadStatusMsg}
                   </div>
                 )}
@@ -541,9 +539,9 @@ export default function UploadModal({ onClose, onSubmit, currentUser, bannedKeyw
           <div className="pt-2">
             <button
               type="submit"
-              className="w-full py-3.5 px-6 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm sm:text-base transition-all shadow-xl shadow-emerald-500/20 active:scale-98 flex items-center justify-center gap-2"
+              className="btn-primary w-full py-3.5 px-6 rounded-2xl text-sm sm:text-base shadow-xl flex items-center justify-center gap-2"
             >
-              <Sparkles className="w-5 h-5" />
+              <Sparkles className="w-5 h-5 text-current" />
               <span>Publish Listing (21-Day Active Board)</span>
             </button>
           </div>

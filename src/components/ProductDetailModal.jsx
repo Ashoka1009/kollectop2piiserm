@@ -80,23 +80,23 @@ export default function ProductDetailModal({ item, onClose, onReportItem, curren
     : ['https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=800&q=80'];
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 dark:bg-slate-950/70 backdrop-blur-xl flex items-center justify-center p-3 sm:p-6 animate-in fade-in">
       
       {/* Toast Alert Popup */}
       {toastMessage && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-emerald-500 text-slate-950 font-extrabold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2 animate-bounce">
-          <Sparkles className="w-4 h-4" />
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 glass-modal text-slate-900 dark:text-white font-extrabold text-xs sm:text-sm px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2 animate-bounce">
+          <Sparkles className="w-4 h-4 text-slate-400" />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* Main Modal Card Container */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-3xl w-full overflow-hidden shadow-2xl relative flex flex-col max-h-[90vh]">
+      <div className="glass-modal rounded-3xl max-w-3xl w-full overflow-hidden shadow-2xl relative flex flex-col max-h-[90vh]">
         
         {/* Modal Header Bar */}
-        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md sticky top-0 z-10">
+        <div className="p-4 sm:p-5 border-b border-slate-200/50 dark:border-white/10 flex items-center justify-between backdrop-blur-md sticky top-0 z-10">
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-1 text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 rounded-full flex items-center gap-1">
+            <span className="px-2.5 py-1 text-xs font-bold glass-badge text-slate-800 dark:text-slate-200 rounded-full flex items-center gap-1">
               <Building2 className="w-3.5 h-3.5" />
               IISER Mohali Verified
             </span>
@@ -217,7 +217,7 @@ export default function ProductDetailModal({ item, onClose, onReportItem, curren
             </h2>
 
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400">
+              <span className="text-2xl sm:text-3xl font-black" style={{color:'var(--apple-blue)'}}>
                 ₹{totalPrice.toLocaleString('en-IN')}
               </span>
               {item.isCartSell && (
@@ -244,11 +244,10 @@ export default function ProductDetailModal({ item, onClose, onReportItem, curren
           {item.referenceLinks && item.referenceLinks.length > 0 && (
             <div className="bg-slate-50 dark:bg-slate-950/80 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                <h4 className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5" style={{color:'var(--apple-blue)'}}>
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>Retail Price Reference Links</span>
                 </h4>
-                <InfoTooltip text="Seller provided Amazon or Flipkart links so buyers can compare the used price against new retail price." position="left" />
               </div>
               <div className="space-y-2">
                 {item.referenceLinks.map((link, i) => (
@@ -257,10 +256,10 @@ export default function ProductDetailModal({ item, onClose, onReportItem, curren
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-800 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all group shadow-sm"
+                    className="flex items-center justify-between p-2.5 rounded-xl glass-card text-xs text-slate-800 dark:text-slate-200 transition-all group shadow-sm hover:text-[var(--apple-blue)]"
                   >
                     <span className="font-bold group-hover:underline truncate max-w-[80%]">{link.label || link.url}</span>
-                    <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-500 shrink-0" />
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-[var(--apple-blue)] shrink-0" />
                   </a>
                 ))}
               </div>
@@ -269,11 +268,11 @@ export default function ProductDetailModal({ item, onClose, onReportItem, curren
 
           {/* Cart / Bundle Sub-items Selector */}
           {item.isCartSell && item.subItems && item.subItems.length > 0 && (
-            <div className="bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-500/30 p-4 rounded-2xl">
+            <div className="glass-card p-4 rounded-2xl">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h4 className="text-xs font-extrabold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Layers className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <h4 className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5" style={{color:'var(--apple-blue)'}}>
+                    <Layers className="w-4 h-4" style={{color:'var(--apple-blue)'}} />
                     <span>Select Bundle Sub-Items</span>
                   </h4>
                   <p className="text-[11px] text-slate-600 dark:text-slate-400">Check the items you want to buy. WhatsApp message will automatically list your selection!</p>
@@ -289,22 +288,23 @@ export default function ProductDetailModal({ item, onClose, onReportItem, curren
                       key={sub.id}
                       className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
                         isChecked
-                          ? 'bg-white dark:bg-slate-900/90 border-emerald-500 shadow-md'
+                          ? 'bg-white dark:bg-slate-900/90 shadow-md'
                           : 'bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 opacity-60 hover:opacity-100'
                       }`}
+                      style={isChecked ? {borderColor:'var(--apple-blue)'} : {}}
                     >
                       <div className="flex items-center gap-3">
                         <input
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => toggleSubItem(sub.id)}
-                          className="w-4 h-4 rounded border-slate-300 text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+                          className="w-4 h-4 rounded border-slate-300 cursor-pointer accent-[var(--apple-blue)]"
                         />
                         <span className={`text-xs sm:text-sm font-bold ${isChecked ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>
                           {sub.title}
                         </span>
                       </div>
-                      <span className="text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400">
+                      <span className="text-xs sm:text-sm font-black" style={{color:'var(--apple-blue)'}}>
                         ₹{sub.price}
                       </span>
                     </label>
@@ -322,22 +322,22 @@ export default function ProductDetailModal({ item, onClose, onReportItem, curren
             </div>
             <div>
               <span className="text-slate-400 dark:text-slate-500">Listing Contact: </span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">{targetWhatsapp}</span>
+              <span className="font-mono font-bold" style={{color:'var(--apple-blue)'}}>{targetWhatsapp}</span>
             </div>
           </div>
 
         </div>
 
         {/* Primary CTA Action Footer */}
-        <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex items-center gap-3">
+        <div className="p-4 sm:p-5 border-t border-slate-200/50 dark:border-white/10 flex items-center gap-3">
           <div className="flex-1 flex items-center">
             <a
               href={generateWhatsappUrl()}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm sm:text-base transition-all shadow-xl shadow-emerald-500/25 active:scale-98"
+              className="btn-primary w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl text-sm sm:text-base shadow-xl"
             >
-              <MessageCircle className="w-5 h-5 fill-slate-950" />
+              <MessageCircle className="w-5 h-5 text-current" />
               <span>
                 {item.isCartSell
                   ? `Chat on WhatsApp (Selected: ₹${totalPrice.toLocaleString('en-IN')})`

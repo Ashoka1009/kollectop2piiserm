@@ -7,9 +7,26 @@ import UploadModal from './components/UploadModal';
 import SellerDashboard from './components/SellerDashboard';
 import AdminPanel from './components/AdminPanel';
 import AuthModal from './components/AuthModal';
+import ToastNotification from './components/ToastNotification';
+import { ProductSkeletonLoader, PageTransitionLoader } from './components/SkeletonLoader';
+import NotFound from './components/NotFound';
+import OfflineBanner from './components/OfflineBanner';
 import { INITIAL_LISTINGS, INITIAL_BANNED_KEYWORDS } from './data/mockData';
 import { ShieldAlert, RotateCcw } from 'lucide-react';
 import InfoTooltip from './components/InfoTooltip';
+import {
+  fetchListingsFromSupabase,
+  createListingInSupabase,
+  updateListingInSupabase,
+  deleteListingFromSupabase,
+  fetchBannedKeywordsFromSupabase,
+  addBannedKeywordToSupabase,
+  removeBannedKeywordFromSupabase,
+  fetchProfilesFromSupabase,
+  toggleUserSuspensionInSupabase,
+  getCurrentUserProfile,
+  supabase
+} from './supabase';
 
 export default function App() {
   // ─── Dark Mode State ────────────────────────────────────────────────────────
@@ -59,7 +76,7 @@ export default function App() {
     };
   });
 
-  // ─── Navigation & Modal State ───────────────────────────────────────────────
+  // ─── Navigation, Loading & Feedback State ────────────────────────────────
   const [activeTab, setActiveTab] = useState('feed');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -67,6 +84,64 @@ export default function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  const handleTabChange = (tab) => {
+    setIsNavigating(true);
+    setActiveTab(tab);
+    setTimeout(() => setIsNavigating(false), 250);
+  };
+
+  // ─── Initial Load & Sync from Supabase Backend ────────────────────────────
+  useEffect(() => {
+    async function loadBackendData() {
+      // 1. Fetch Listings
+      const dbListings = await fetchListingsFromSupabase();
+      if (dbListings && dbListings.length > 0) {
+        setListings(dbListings);
+      }
+
+      // 2. Fetch Banned Keywords
+      const dbKeywords = await fetchBannedKeywordsFromSupabase();
+      if (dbKeywords && dbKeywords.length > 0) {
+        setBannedKeywords(dbKeywords);
+      }
+
+      // 3. Fetch User Profiles
+      const dbProfiles = await fetchProfilesFromSupabase();
+      if (dbProfiles && dbProfiles.length > 0) {
+        setUsers(dbProfiles);
+      }
+
+      // 4. Check Current Supabase Auth Session
+      const activeUser = await getCurrentUserProfile();
+      if (activeUser) {
+        setCurrentUser(activeUser);
+      }
+      setIsLoading(false);
+    }
+
+    loadBackendData();
+
+    // Listen to Supabase Auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        const userProfile = await getCurrentUserProfile();
+        if (userProfile) setCurrentUser(userProfile);
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, []);
 
   // ─── Sync to LocalStorage ───────────────────────────────────────────────────
   useEffect(() => { localStorage.setItem('iiserm_listings', JSON.stringify(listings)); }, [listings]);
@@ -96,47 +171,76 @@ export default function App() {
     return new Date(b.createdAt) - new Date(a.createdAt);
   });
 
-  // ─── User Action Handlers ───────────────────────────────────────────────────
-  const handleCreateListing = (newListing) => {
+  // ─── User Action Handlers (Supabase Connected) ──────────────────────────────
+  const handleCreateListing = async (newListing) => {
     if (isSuspended) {
-      alert('Your account has been suspended by campus moderators. You cannot create new listings.');
+      showToast('Your account has been suspended by campus moderators.', 'error');
       return;
     }
-    setListings([newListing, ...listings]);
+    const saved = await createListingInSupabase(newListing);
+    setListings([saved, ...listings]);
+    showToast('Listing published successfully!');
     setActiveTab('feed');
   };
 
   const handleExtendTimer = (id) => {
+    const updatedExpiry = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString();
     setListings(listings.map(item =>
-      item.id === id
-        ? { ...item, expiresAt: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString() }
-        : item
+      item.id === id ? { ...item, expiresAt: updatedExpiry } : item
     ));
+    updateListingInSupabase(id, { expiresAt: updatedExpiry });
+    showToast('Listing timer extended by 21 days!');
   };
 
-  const handleMarkAsSold = (id) => setListings(listings.filter(item => item.id !== id));
-  const handleDeleteListing = (id) => setListings(listings.filter(item => item.id !== id));
+  const handleMarkAsSold = (id) => {
+    setListings(listings.filter(item => item.id !== id));
+    deleteListingFromSupabase(id);
+    showToast('Item marked as sold and removed from bulletin board.');
+  };
 
-  // ─── Admin Handlers ─────────────────────────────────────────────────────────
+  const handleDeleteListing = (id) => {
+    setListings(listings.filter(item => item.id !== id));
+    deleteListingFromSupabase(id);
+    showToast('Listing deleted.');
+  };
+
+  // ─── Admin Handlers (Supabase Connected) ───────────────────────────────────
   const handleToggleSuspendUser = (email) => {
-    setUsers(users.map(u => u.email === email ? { ...u, isSuspended: !u.isSuspended } : u));
+    const targetUser = users.find(u => u.email === email);
+    const nextState = targetUser ? !targetUser.isSuspended : true;
+
+    setUsers(users.map(u => u.email === email ? { ...u, isSuspended: nextState } : u));
+    toggleUserSuspensionInSupabase(email, nextState);
   };
 
-  const handleForceDeleteListing = (id) => setListings(listings.filter(item => item.id !== id));
+  const handleForceDeleteListing = (id) => {
+    setListings(listings.filter(item => item.id !== id));
+    deleteListingFromSupabase(id);
+  };
 
   const handleToggleRerouteChat = (id) => {
+    const targetItem = listings.find(item => item.id === id);
+    const nextState = targetItem ? !targetItem.reroutedToAdmin : true;
+
     setListings(listings.map(item =>
-      item.id === id ? { ...item, reroutedToAdmin: !item.reroutedToAdmin } : item
+      item.id === id ? { ...item, reroutedToAdmin: nextState } : item
     ));
+    updateListingInSupabase(id, { reroutedToAdmin: nextState });
   };
 
   const handleAddBannedKeyword = (kw) => {
-    if (!bannedKeywords.includes(kw.toLowerCase())) {
-      setBannedKeywords([...bannedKeywords, kw.toLowerCase()]);
+    const cleanKw = kw.toLowerCase();
+    if (!bannedKeywords.includes(cleanKw)) {
+      setBannedKeywords([...bannedKeywords, cleanKw]);
+      addBannedKeywordToSupabase(cleanKw);
     }
   };
 
-  const handleRemoveBannedKeyword = (kw) => setBannedKeywords(bannedKeywords.filter(k => k !== kw));
+  const handleRemoveBannedKeyword = (kw) => {
+    const cleanKw = kw.toLowerCase();
+    setBannedKeywords(bannedKeywords.filter(k => k !== cleanKw));
+    removeBannedKeywordFromSupabase(cleanKw);
+  };
 
   const handleResetSeedData = () => {
     if (window.confirm('Reset all listings, banned keywords, and user accounts back to initial demo state?')) {
@@ -148,24 +252,30 @@ export default function App() {
   const userListings = listings.filter(item => item.sellerEmail?.toLowerCase() === currentUser?.email?.toLowerCase());
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col selection:bg-emerald-500 selection:text-white transition-colors duration-300">
+    <div className="min-h-screen bg-canvas text-canvas-primary flex flex-col transition-colors duration-300" style={{backgroundColor:'var(--canvas-bg)',color:'var(--text-primary)'}}>
       
+      {/* Network Status Banner */}
+      <OfflineBanner />
+
+      {/* Page Navigation Transition Loader */}
+      {isNavigating && <PageTransitionLoader />}
+
       {/* Top Navigation Bar */}
       <Header
         currentUser={currentUser}
         onOpenUpload={() => setShowUploadModal(true)}
-        onOpenDashboard={() => setActiveTab('dashboard')}
-        onOpenAdminPanel={() => setActiveTab('admin')}
+        onOpenDashboard={() => handleTabChange('dashboard')}
+        onOpenAdminPanel={() => handleTabChange('admin')}
         onOpenAuth={() => setShowAuthModal(true)}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabChange}
         darkMode={darkMode}
         setDarkMode={setDarkMode}
       />
 
       {/* Account Suspended Alert Banner */}
       {isSuspended && (
-        <div className="bg-rose-50 dark:bg-rose-950/90 border-b border-rose-200 dark:border-rose-500/50 p-3 text-center text-xs font-bold text-rose-700 dark:text-rose-200 flex items-center justify-center gap-2">
+        <div className="glass-modal border-b border-rose-500/30 p-3 text-center text-xs font-bold text-rose-700 dark:text-rose-300 flex items-center justify-center gap-2">
           <ShieldAlert className="w-4 h-4 text-rose-500" />
           <span>Account Suspended: Your access has been restricted by moderators. Contact admin for resolution.</span>
         </div>
@@ -186,11 +296,19 @@ export default function App() {
               setSortBy={setSortBy}
               totalResults={filteredListings.length}
             />
-            <ProductGrid
-              listings={filteredListings}
-              onSelectProduct={(item) => setSelectedProduct(item)}
-              onOpenUpload={() => setShowUploadModal(true)}
-            />
+            {isLoading ? (
+              <ProductSkeletonLoader count={6} />
+            ) : (
+              <ProductGrid
+                listings={filteredListings}
+                onSelectProduct={(item) => setSelectedProduct(item)}
+                onOpenUpload={() => setShowUploadModal(true)}
+                onResetFilters={() => {
+                  setSearchQuery('');
+                  setSelectedCategory('All');
+                }}
+              />
+            )}
           </>
         )}
 
@@ -220,10 +338,15 @@ export default function App() {
           />
         )}
 
+        {/* 404 NOT FOUND VIEW */}
+        {activeTab === '404' && (
+          <NotFound onGoHome={() => handleTabChange('feed')} />
+        )}
+
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-800/80 py-6 bg-white/80 dark:bg-slate-900/60 backdrop-blur-md mt-auto transition-colors duration-300">
+      <footer className="glass-header border-t border-b-0 py-6 mt-auto transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
           <div className="flex items-center gap-2">
             <img src="/logo.jpg" alt="KollectoP2P" className="w-5 h-5 rounded-md" />
@@ -231,7 +354,7 @@ export default function App() {
             <span className="text-slate-300 dark:text-slate-600">•</span>
             <span>© 2026 IISER Mohali Campus Marketplace</span>
             <span className="text-slate-300 dark:text-slate-600">•</span>
-            <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">@iisermohali.ac.in verified</span>
+            <span className="glass-badge px-2 py-0.5 rounded-full text-[10px] font-mono font-bold text-slate-800 dark:text-slate-200">@iisermohali.ac.in verified</span>
             <InfoTooltip text="Zero-friction campus bulletin board routing off-platform to WhatsApp." position="top" />
           </div>
 
@@ -274,10 +397,14 @@ export default function App() {
             if (!users.some(u => u.email === profile.email)) {
               setUsers([...users, { ...profile, isSuspended: false }]);
             }
+            showToast('Profile updated!');
           }}
           onClose={() => setShowAuthModal(false)}
         />
       )}
+
+      {/* GLOBAL TOAST NOTIFICATIONS */}
+      <ToastNotification toast={toast} onClose={() => setToast(null)} />
 
     </div>
   );

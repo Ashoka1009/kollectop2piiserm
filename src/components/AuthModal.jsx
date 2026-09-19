@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { X, Mail, Phone, Lock, Sparkles, ArrowRight, ShieldCheck, User } from 'lucide-react';
+import { X, Mail, Phone, Lock, Sparkles, ArrowRight, ShieldCheck, User, Loader2 } from 'lucide-react';
 import InfoTooltip from './InfoTooltip';
+import { signUpUser, signInUser } from '../supabase';
 
 export default function AuthModal({ currentUser, onSaveProfile, onClose }) {
   const [email, setEmail] = useState(currentUser?.email || '');
   const [name, setName] = useState(currentUser?.name || '');
   const [whatsapp, setWhatsapp] = useState(currentUser?.whatsapp || '+919876543210');
+  const [password, setPassword] = useState('');
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
 
   const selectDemoPersona = (persona) => {
@@ -25,7 +28,7 @@ export default function AuthModal({ currentUser, onSaveProfile, onClose }) {
     setErrorMsg(null);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg(null);
 
@@ -42,6 +45,24 @@ export default function AuthModal({ currentUser, onSaveProfile, onClose }) {
       return;
     }
 
+    setIsAuthLoading(true);
+
+    // Try Supabase Auth if password is provided
+    if (password.trim()) {
+      try {
+        await signInUser(cleanEmail, password);
+      } catch (signInErr) {
+        // If sign in fails, attempt sign up automatically
+        try {
+          await signUpUser(cleanEmail, password, name.trim() || cleanEmail.split('@')[0], whatsapp.trim());
+        } catch (signUpErr) {
+          console.warn("Supabase Auth notice:", signUpErr.message);
+        }
+      }
+    }
+
+    setIsAuthLoading(false);
+
     onSaveProfile({
       email: cleanEmail,
       name: name.trim() || cleanEmail.split('@')[0],
@@ -53,13 +74,13 @@ export default function AuthModal({ currentUser, onSaveProfile, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 dark:bg-slate-950/70 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in">
+      <div className="glass-modal rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
         
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 mb-4">
+        <div className="flex items-center justify-between border-b border-slate-200/50 dark:border-white/10 pb-4 mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl overflow-hidden border-2 border-emerald-500/40 shadow-sm">
+            <div className="w-10 h-10 rounded-2xl overflow-hidden border border-slate-200/60 dark:border-white/10 shadow-sm">
               <img src="/logo.jpg" alt="KollectoP2P" className="w-full h-full object-cover" />
             </div>
             <div>
@@ -70,48 +91,48 @@ export default function AuthModal({ currentUser, onSaveProfile, onClose }) {
               <p className="text-[11px] text-slate-500 dark:text-slate-400">IISER Mohali Campus Peer-to-Peer Marketplace</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-800 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
+          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-800 dark:hover:text-white rounded-xl hover:bg-white/40 dark:hover:bg-slate-800/40">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Error Alert */}
         {errorMsg && (
-          <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-950/90 border border-rose-200 dark:border-rose-500/40 rounded-xl text-rose-700 dark:text-rose-200 text-xs font-semibold leading-relaxed">
+          <div className="mb-4 p-3 glass-badge border-rose-500/30 rounded-2xl text-rose-700 dark:text-rose-300 text-xs font-semibold leading-relaxed">
             {errorMsg}
           </div>
         )}
 
         {/* Quick Demo Switcher Buttons */}
-        <div className="mb-5 bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
+        <div className="mb-5 glass-badge p-3 rounded-2xl space-y-2">
           <div className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center justify-between">
             <span>Quick Select Demo Account:</span>
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            <Sparkles className="w-3.5 h-3.5 text-slate-400" />
           </div>
           <div className="grid grid-cols-1 gap-1.5">
             <button
               type="button"
               onClick={() => selectDemoPersona('student')}
-              className="w-full text-left p-2.5 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs text-slate-800 dark:text-slate-200 flex items-center justify-between transition-all"
+              className="w-full text-left p-2.5 rounded-xl glass-badge hover:bg-white/80 dark:hover:bg-slate-800/80 text-xs text-slate-800 dark:text-slate-200 flex items-center justify-between transition-all"
             >
-              <span>Alex Mehta <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">(alex.m22@iisermohali.ac.in)</span></span>
+              <span>Alex Mehta <span className="text-slate-500 dark:text-slate-400 font-mono font-bold">(alex.m22@iisermohali.ac.in)</span></span>
               <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
             </button>
             <button
               type="button"
               onClick={() => selectDemoPersona('senior')}
-              className="w-full text-left p-2.5 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs text-slate-800 dark:text-slate-200 flex items-center justify-between transition-all"
+              className="w-full text-left p-2.5 rounded-xl glass-badge hover:bg-white/80 dark:hover:bg-slate-800/80 text-xs text-slate-800 dark:text-slate-200 flex items-center justify-between transition-all"
             >
-              <span>Sarah Sharma <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">(sarah.b20@iisermohali.ac.in)</span></span>
+              <span>Sarah Sharma <span className="text-slate-500 dark:text-slate-400 font-mono font-bold">(sarah.b20@iisermohali.ac.in)</span></span>
               <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
             </button>
             <button
               type="button"
               onClick={() => selectDemoPersona('admin')}
-              className="w-full text-left p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-500/30 text-xs text-purple-800 dark:text-purple-200 flex items-center justify-between transition-all"
+              className="w-full text-left p-2.5 rounded-xl glass-badge hover:bg-white/80 dark:hover:bg-slate-800/80 text-xs text-slate-800 dark:text-slate-200 flex items-center justify-between transition-all"
             >
-              <span>Campus Admin <span className="text-purple-600 dark:text-purple-300 font-mono font-bold">(admin@marketplace.org — No domain restriction)</span></span>
-              <ShieldCheck className="w-3.5 h-3.5 text-purple-500" />
+              <span>Campus Admin <span className="text-slate-500 dark:text-slate-400 font-mono font-bold">(admin@marketplace.org)</span></span>
+              <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
             </button>
           </div>
         </div>
@@ -122,7 +143,7 @@ export default function AuthModal({ currentUser, onSaveProfile, onClose }) {
           {/* Email Input */}
           <div>
             <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
-              <Mail className="w-3.5 h-3.5 text-emerald-500" />
+              <Mail className="w-3.5 h-3.5" style={{color:'var(--apple-blue)'}} />
               <span>Institute Email Address *</span>
               <InfoTooltip text="Must end with @iisermohali.ac.in unless logging in as Admin." position="right" />
             </label>
@@ -131,7 +152,7 @@ export default function AuthModal({ currentUser, onSaveProfile, onClose }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="e.g. username@iisermohali.ac.in"
-              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
+              className="glass-input w-full rounded-xl p-2.5 text-xs placeholder-slate-400"
               required
             />
           </div>
@@ -139,7 +160,7 @@ export default function AuthModal({ currentUser, onSaveProfile, onClose }) {
           {/* Full Name Input */}
           <div>
             <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
-              <User className="w-3.5 h-3.5 text-emerald-500" />
+              <User className="w-3.5 h-3.5" style={{color:'var(--apple-blue)'}} />
               <span>Display Name</span>
               <InfoTooltip text="Displayed on your active item listings." position="right" />
             </label>
@@ -148,14 +169,14 @@ export default function AuthModal({ currentUser, onSaveProfile, onClose }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Alex Mehta"
-              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:border-emerald-500 focus:outline-none"
+              className="glass-input w-full rounded-xl p-2.5 text-xs placeholder-slate-400"
             />
           </div>
 
           {/* WhatsApp Phone Number */}
           <div>
             <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
-              <Phone className="w-3.5 h-3.5 text-emerald-500" />
+              <Phone className="w-3.5 h-3.5" style={{color:'var(--apple-blue)'}} />
               <span>WhatsApp Number (Required) *</span>
               <InfoTooltip text="The only required profile field. Used strictly to route buyer clicks off-platform to your WhatsApp." position="right" />
             </label>
@@ -164,16 +185,40 @@ export default function AuthModal({ currentUser, onSaveProfile, onClose }) {
               value={whatsapp}
               onChange={(e) => setWhatsapp(e.target.value)}
               placeholder="e.g. +91 9876543210"
-              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-mono text-slate-900 dark:text-white placeholder-slate-400 focus:border-emerald-500 focus:outline-none"
+              className="glass-input w-full rounded-xl p-2.5 text-xs font-mono placeholder-slate-400"
               required
+            />
+          </div>
+
+          {/* Password (Optional for Supabase Auth) */}
+          <div>
+            <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+              <Lock className="w-3.5 h-3.5" style={{color:'var(--apple-blue)'}} />
+              <span>Password (Optional for Supabase Auth)</span>
+              <InfoTooltip text="Enter a password to register or authenticate your account with Supabase Auth." position="right" />
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter password (min. 6 characters)"
+              className="glass-input w-full rounded-xl p-2.5 text-xs placeholder-slate-400"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm transition-all shadow-lg shadow-emerald-500/20 active:scale-98"
+            disabled={isAuthLoading}
+            className="btn-primary w-full py-3 px-4 rounded-2xl text-sm flex items-center justify-center gap-2 disabled:opacity-60"
           >
-            Authenticate & Proceed to KollectoP2P
+            {isAuthLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-current" />
+                <span>Connecting to Supabase...</span>
+              </>
+            ) : (
+              <span>Authenticate & Proceed to KollectoP2P</span>
+            )}
           </button>
 
         </form>
