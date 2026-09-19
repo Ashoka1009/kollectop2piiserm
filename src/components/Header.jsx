@@ -87,21 +87,23 @@ export default function Header({
               <InfoTooltip text="Manage active listings, extend timers, edit bundle items, or mark items as sold." position="bottom" />
             </div>
 
-            {/* Admin Moderation Button */}
-            <div className="flex items-center">
-              <button
-                onClick={onOpenAdminPanel}
-                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-semibold rounded-2xl backdrop-blur-md transition-all ${
-                  activeTab === 'admin'
-                    ? 'bg-white/80 dark:bg-slate-800/80 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600 shadow-sm'
-                    : 'bg-white/30 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300 border border-slate-200/50 dark:border-white/10 hover:bg-white/60 dark:hover:bg-slate-800/60'
-                }`}
-              >
-                <ShieldCheck className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                <span className="hidden lg:inline">Admin Panel</span>
-              </button>
-              <InfoTooltip text="Moderator portal: Manage banned keywords, suspend spammers, and force delete items." position="bottom" />
-            </div>
+            {/* Admin Moderation Button (Only visible to authorized Admin users) */}
+            {currentUser?.isAdmin && (
+              <div className="flex items-center">
+                <button
+                  onClick={onOpenAdminPanel}
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-semibold rounded-2xl backdrop-blur-md transition-all ${
+                    activeTab === 'admin'
+                      ? 'bg-white/80 dark:bg-slate-800/80 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600 shadow-sm'
+                      : 'bg-white/30 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300 border border-slate-200/50 dark:border-white/10 hover:bg-white/60 dark:hover:bg-slate-800/60'
+                  }`}
+                >
+                  <ShieldCheck className="w-4 h-4 text-rose-500" />
+                  <span className="hidden lg:inline">Admin Panel</span>
+                </button>
+                <InfoTooltip text="Moderator portal: Manage banned keywords, suspend spammers, and force delete items." position="bottom" />
+              </div>
+            )}
 
             {/* User Profile / Login Gateway */}
             <div className="relative">

@@ -324,16 +324,34 @@ export default function App() {
 
         {/* ADMIN PANEL VIEW */}
         {activeTab === 'admin' && (
-          <AdminPanel
-            listings={listings}
-            users={users}
-            onToggleSuspendUser={handleToggleSuspendUser}
-            onForceDeleteListing={handleForceDeleteListing}
-            onToggleRerouteChat={handleToggleRerouteChat}
-            bannedKeywords={bannedKeywords}
-            onAddBannedKeyword={handleAddBannedKeyword}
-            onRemoveBannedKeyword={handleRemoveBannedKeyword}
-          />
+          currentUser?.isAdmin ? (
+            <AdminPanel
+              listings={listings}
+              users={users}
+              onToggleSuspendUser={handleToggleSuspendUser}
+              onForceDeleteListing={handleForceDeleteListing}
+              onToggleRerouteChat={handleToggleRerouteChat}
+              bannedKeywords={bannedKeywords}
+              onAddBannedKeyword={handleAddBannedKeyword}
+              onRemoveBannedKeyword={handleRemoveBannedKeyword}
+            />
+          ) : (
+            <div className="max-w-md mx-auto my-16 p-8 glass-card rounded-3xl text-center space-y-4 border border-rose-500/30">
+              <div className="w-12 h-12 bg-rose-500/10 text-rose-500 rounded-2xl flex items-center justify-center mx-auto font-bold text-xl">
+                🛡️
+              </div>
+              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Access Restricted</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                You do not have administrative privileges to view the Moderator Panel. Please sign in with an authorized Admin account.
+              </p>
+              <button
+                onClick={() => handleTabChange('feed')}
+                className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-semibold text-xs transition-all hover:scale-105"
+              >
+                Return to Campus Marketplace
+              </button>
+            </div>
+          )
         )}
 
         {/* 404 NOT FOUND VIEW */}
