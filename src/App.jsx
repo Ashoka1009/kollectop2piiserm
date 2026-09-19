@@ -60,19 +60,17 @@ export default function App() {
   const [users, setUsers] = useState(() => {
     const saved = localStorage.getItem('iiserm_users');
     return saved ? JSON.parse(saved) : [
-      { email: 'alex.m22@iisermohali.ac.in', name: 'Alex Mehta', whatsapp: '+919812345678', isSuspended: false },
-      { email: 'sarah.b20@iisermohali.ac.in', name: 'Sarah Sharma', whatsapp: '+919876543210', isSuspended: false },
-      { email: 'rohan.k21@iisermohali.ac.in', name: 'Rohan Kumar', whatsapp: '+919988776655', isSuspended: false }
+      { email: 'ms25237@iisermohali.ac.in', name: 'divanshu(admin)', whatsapp: '+917988860162', isAdmin: true, isSuspended: false }
     ];
   });
 
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem('iiserm_current_user');
     return saved ? JSON.parse(saved) : {
-      email: 'alex.m22@iisermohali.ac.in',
-      name: 'Alex Mehta (BS-MS 2022)',
-      whatsapp: '+919812345678',
-      isAdmin: false
+      email: 'ms25237@iisermohali.ac.in',
+      name: 'divanshu(admin)',
+      whatsapp: '+917988860162',
+      isAdmin: true
     };
   });
 

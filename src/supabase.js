@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { isUserAdmin } from './data/mockData';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://mjcapuzqkopueaktfbge.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qY2FwdXpxa29wdWVha3RmYmdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4Mjk1MTEsImV4cCI6MjEwNTQwNTUxMX0.Gh2utuBn1j4UFH-eyUhSkiPH8XX3I7jOMpdkXISqK3Y';
@@ -78,7 +79,7 @@ export async function signUpUser(email, password, name, whatsapp) {
       email: email.toLowerCase(),
       name,
       whatsapp,
-      is_admin: email.toLowerCase().includes('admin'),
+      is_admin: isUserAdmin(email),
       is_suspended: false
     });
   }
@@ -125,7 +126,7 @@ export async function getCurrentUserProfile() {
       email: profile.email,
       name: profile.name,
       whatsapp: profile.whatsapp,
-      isAdmin: profile.is_admin,
+      isAdmin: profile.is_admin || isUserAdmin(profile.email),
       isSuspended: profile.is_suspended
     };
   }
@@ -134,8 +135,8 @@ export async function getCurrentUserProfile() {
     id: session.user.id,
     email: session.user.email,
     name: session.user.user_metadata?.name || session.user.email.split('@')[0],
-    whatsapp: session.user.user_metadata?.whatsapp || '+919876543210',
-    isAdmin: session.user.email.includes('admin'),
+    whatsapp: session.user.user_metadata?.whatsapp || '+917988860162',
+    isAdmin: isUserAdmin(session.user.email),
     isSuspended: false
   };
 }

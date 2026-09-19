@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { X, Mail, Phone, Lock, Sparkles, ArrowRight, ShieldCheck, User, Loader2 } from 'lucide-react';
 import InfoTooltip from './InfoTooltip';
 import { signUpUser, signInUser } from '../supabase';
+import { isUserAdmin } from '../data/mockData';
 
 export default function AuthModal({ currentUser, onSaveProfile, onClose }) {
   const [email, setEmail] = useState(currentUser?.email || '');
   const [name, setName] = useState(currentUser?.name || '');
-  const [whatsapp, setWhatsapp] = useState(currentUser?.whatsapp || '+919876543210');
+  const [whatsapp, setWhatsapp] = useState(currentUser?.whatsapp || '+917988860162');
   const [password, setPassword] = useState('');
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
@@ -21,9 +22,10 @@ export default function AuthModal({ currentUser, onSaveProfile, onClose }) {
       setName('Sarah Sharma (Graduating Senior)');
       setWhatsapp('+919876543210');
     } else if (persona === 'admin') {
-      setEmail('admin@marketplace.org');
-      setName('Campus Admin Moderator');
-      setWhatsapp('+919999888877');
+      setEmail('ms25237@iisermohali.ac.in');
+      setName('divanshu(admin)');
+      setWhatsapp('+917988860162');
+      setPassword('Divanshu#057');
     }
     setErrorMsg(null);
   };
@@ -33,7 +35,8 @@ export default function AuthModal({ currentUser, onSaveProfile, onClose }) {
     setErrorMsg(null);
 
     const cleanEmail = email.trim().toLowerCase();
-    const isAdmin = cleanEmail.includes('admin');
+    const isAdmin = isUserAdmin(cleanEmail);
+
 
     if (!isAdmin && !cleanEmail.endsWith('@iisermohali.ac.in')) {
       setErrorMsg('Login restricted! Student accounts must use an official @iisermohali.ac.in Google Workspace email address.');
@@ -131,7 +134,7 @@ export default function AuthModal({ currentUser, onSaveProfile, onClose }) {
               onClick={() => selectDemoPersona('admin')}
               className="w-full text-left p-2.5 rounded-xl glass-badge hover:bg-white/80 dark:hover:bg-slate-800/80 text-xs text-slate-800 dark:text-slate-200 flex items-center justify-between transition-all"
             >
-              <span>Campus Admin <span className="text-slate-500 dark:text-slate-400 font-mono font-bold">(admin@marketplace.org)</span></span>
+              <span>Divanshu (Admin) <span className="text-slate-500 dark:text-slate-400 font-mono font-bold">(ms25237@iisermohali.ac.in)</span></span>
               <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
             </button>
           </div>
